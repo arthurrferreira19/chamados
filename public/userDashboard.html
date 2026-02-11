@@ -1,0 +1,427 @@
+<!-- public/userDashboard.html -->
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Maximum Atlas • Painel do Usuário</title>
+  <link rel="stylesheet" href="./assets/app.css"/>
+</head>
+<body>
+  <div class="dashboard">
+    <aside class="sidebar">
+      <div class="brand">
+        <div style="width:38px;height:38px;border-radius:16px;display:grid;place-items:center;
+                    background: linear-gradient(135deg, rgba(110,21,51,.16), rgba(246,211,221,.75));
+                    border:1px solid rgba(110,21,51,.15);">
+          <i data-lucide="sparkles" class="icon"></i>
+        </div>
+        <div>
+          <h1>Maximum Atlas</h1>
+          <small id="userName">Acesso: ...</small>
+        </div>
+      </div>
+
+      <div class="navSection">
+        <div class="navTitle">Navegação</div>
+
+        <div class="navItem active" data-view="dashboard">
+          <i data-lucide="layout-dashboard" class="icon"></i>
+          Dashboard
+        </div>
+
+        <div class="navItem" data-view="tickets">
+          <i data-lucide="ticket" class="icon"></i>
+          Chamados
+        </div>
+
+        <div class="navItem" data-view="notifications">
+          <i data-lucide="bell" class="icon"></i>
+          Notificações
+        </div>
+
+        <div style="margin-top:18px;">
+          <button id="logoutBtn" class="btn btn-ghost" style="width:100%; justify-content:center;">
+            <i data-lucide="log-out" class="icon"></i>
+            Sair
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar fadeUp" style="align-items:flex-start;">
+        <div>
+          <h2 id="pageTitle">Dashboard</h2>
+          <p id="pageSubtitle">Visão geral dos seus chamados e notificações.</p>
+        </div>
+
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button id="notifBtn" class="btn btn-ghost" style="position:relative;">
+            <i data-lucide="bell" class="icon"></i>
+            Notificações
+            <span id="notifBadge"
+              style="display:none; position:absolute; top:-7px; right:-7px; min-width:18px; height:18px;
+                     padding:0 6px; border-radius:999px; font-size:11px; font-weight:1000;
+                     background: rgba(110,21,51,.95); color:white; line-height:18px; text-align:center;
+                     box-shadow:0 10px 30px rgba(110,21,51,.22);">
+              0
+            </span>
+          </button>
+
+          <button id="refreshBtn" class="btn btn-primary">
+            <i data-lucide="refresh-ccw" class="icon" style="color:white;"></i>
+            Atualizar
+          </button>
+        </div>
+      </header>
+
+      <!-- DASHBOARD -->
+      <section id="viewDashboard" class="fadeUp">
+        <div class="kpiGrid">
+          <div class="kpi"><div class="t">Abertos</div><div class="v" id="kpiOpen">0</div></div>
+          <div class="kpi"><div class="t">Em andamento</div><div class="v" id="kpiProg">0</div></div>
+          <div class="kpi"><div class="t">Resolvidos</div><div class="v" id="kpiResolved">0</div></div>
+          <div class="kpi"><div class="t">Fechados</div><div class="v" id="kpiClosed">0</div></div>
+        </div>
+
+        <div class="chartGrid">
+          <div class="chartCard">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+              <div style="font-weight:1000;">Seus chamados (últimos dias)</div>
+              <span class="pill neutral"><i data-lucide="activity" class="icon" style="width:16px;height:16px;"></i> tendência</span>
+            </div>
+            <div style="margin-top:12px;">
+              <canvas id="chartDaily" height="90"></canvas>
+            </div>
+          </div>
+
+          <div class="chartCard">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+              <div style="font-weight:1000;">Status (agora)</div>
+              <span class="pill neutral"><i data-lucide="layers" class="icon" style="width:16px;height:16px;"></i> distribuição</span>
+            </div>
+            <div style="margin-top:12px;">
+              <canvas id="chartStatus" height="160"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="chartGrid">
+          <div class="chartCard">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+              <div style="font-weight:1000;">Prioridades</div>
+              <span class="pill neutral"><i data-lucide="zap" class="icon" style="width:16px;height:16px;"></i> atenção</span>
+            </div>
+            <div style="margin-top:12px;">
+              <canvas id="chartPriority" height="120"></canvas>
+            </div>
+          </div>
+
+          <div class="chartCard">
+            <div style="font-weight:1000;">Atalhos</div>
+            <div class="chips" style="margin-top:12px;">
+              <div class="chip" id="goTickets"><i data-lucide="ticket" class="icon" style="width:16px;height:16px;"></i> Chamados</div>
+              <div class="chip" id="goNotifications"><i data-lucide="bell" class="icon" style="width:16px;height:16px;"></i> Notificações</div>
+              <div class="chip" id="goNewTicket"><i data-lucide="plus" class="icon" style="width:16px;height:16px;"></i> Novo Chamado</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CHAMADOS -->
+      <section id="viewTickets" class="fadeUp" style="display:none;">
+        <div class="card">
+          <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:end; justify-content:space-between;">
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
+              <div class="field" style="min-width:240px;">
+                <div class="label">Buscar</div>
+                <input id="q" class="input" placeholder="Título, descrição..." />
+              </div>
+
+              <div class="field" style="min-width:180px;">
+                <div class="label">Status</div>
+                <select id="statusFilter" class="select">
+                  <option value="">Todos</option>
+                  <option value="open">Aberto</option>
+                  <option value="in_progress">Em andamento</option>
+                  <option value="resolved">Resolvido</option>
+                  <option value="closed">Fechado</option>
+                </select>
+              </div>
+
+              <div class="field" style="min-width:180px;">
+                <div class="label">Prioridade</div>
+                <select id="priorityFilter" class="select">
+                  <option value="">Todas</option>
+                  <option value="low">Baixa</option>
+                  <option value="normal">Normal</option>
+                  <option value="high">Alta</option>
+                  <option value="urgent">Urgente</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+              <button id="newTicketBtn" class="btn btn-primary">
+                <i data-lucide="plus" class="icon" style="color:white;"></i>
+                Novo Chamado
+              </button>
+              <button id="applyBtn" class="btn btn-ghost">
+                <i data-lucide="filter" class="icon"></i>
+                Filtrar
+              </button>
+            </div>
+          </div>
+
+          <div style="margin-top:14px; overflow:auto;">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Título</th>
+                  <th>Status</th>
+                  <th>Prioridade</th>
+                  <th class="muted" style="text-align:right;">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="ticketsBody"></tbody>
+            </table>
+
+            <div id="emptyState" class="muted" style="display:none; padding:14px; font-weight:800;">
+              Nenhum chamado encontrado.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- NOTIFICAÇÕES -->
+      <section id="viewNotifications" class="fadeUp" style="display:none;">
+        <div class="card">
+          <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:end; justify-content:space-between;">
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
+              <div class="field" style="min-width:260px;">
+                <div class="label">Buscar</div>
+                <input id="nq" class="input" placeholder="Título ou descrição..." />
+              </div>
+
+              <div class="field" style="min-width:220px;">
+                <div class="label">Filtro</div>
+                <select id="nFilter" class="select">
+                  <option value="">Todas</option>
+                  <option value="unread">Não lidas</option>
+                  <option value="read">Lidas</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+              <button id="applyNotifBtn" class="btn btn-ghost">
+                <i data-lucide="filter" class="icon"></i>
+                Filtrar
+              </button>
+              <button id="markAllReadBtn" class="btn btn-primary">
+                <i data-lucide="check-check" class="icon" style="color:white;"></i>
+                Marcar tudo como lido
+              </button>
+            </div>
+          </div>
+
+          <div style="margin-top:14px;" id="notifList"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Drawer Notificações -->
+  <div id="notifDrawerOverlay" style="display:none; position:fixed; inset:0; background:rgba(9,12,20,.25); backdrop-filter: blur(3px); z-index:9999;">
+    <div style="position:absolute; top:0; right:0; height:100%; width:min(420px, 92vw);
+         background:rgba(255,255,255,.92); border-left:1px solid rgba(110,21,51,.14);
+         box-shadow:-20px 0 50px rgba(0,0,0,.12); padding:16px; overflow:auto;">
+
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:38px;height:38px;border-radius:16px;display:grid;place-items:center;
+                      background: linear-gradient(135deg, rgba(110,21,51,.16), rgba(246,211,221,.75));
+                      border:1px solid rgba(110,21,51,.15);">
+            <i data-lucide="bell-ring" class="icon"></i>
+          </div>
+          <div>
+            <div style="font-weight:1100;">Notificações</div>
+            <div class="muted" style="font-weight:800; font-size:12px;" id="drawerSubtitle">Últimas notificações</div>
+          </div>
+        </div>
+
+        <button id="closeDrawerBtn" class="btn btn-ghost" style="padding:10px 12px;">
+          <i data-lucide="x" class="icon"></i>
+        </button>
+      </div>
+
+      <div style="margin-top:12px;" id="drawerList"></div>
+
+      <div style="margin-top:14px; display:flex; gap:10px;">
+        <button id="drawerViewAllBtn" class="btn btn-primary" style="flex:1;">
+          <i data-lucide="eye" class="icon" style="color:white;"></i>
+          Visualizar todas as notificações
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Responder notificação -->
+  <div class="modalOverlay" id="modalReplyOverlay">
+    <div class="modal">
+      <div class="modalHeader">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:38px;height:38px;border-radius:16px;display:grid;place-items:center;
+                      background: linear-gradient(135deg, rgba(110,21,51,.16), rgba(246,211,221,.75));
+                      border:1px solid rgba(110,21,51,.15);">
+            <i data-lucide="message-square-text" class="icon"></i>
+          </div>
+          <div>
+            <h3>Responder notificação</h3>
+            <div class="muted" style="font-weight:750; font-size:12px;" id="replySubtitle">—</div>
+          </div>
+        </div>
+
+        <button class="btn btn-ghost" id="closeReplyModal" style="padding:10px 12px;">
+          <i data-lucide="x" class="icon"></i>
+        </button>
+      </div>
+
+      <div class="modalBody">
+        <div class="grid">
+          <div class="field">
+            <div class="label">Resposta</div>
+            <textarea class="textarea" id="replyText" placeholder="Digite sua resposta aqui..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="modalFooter">
+        <button class="btn btn-ghost" id="cancelReplyBtn">
+          <i data-lucide="corner-up-left" class="icon"></i>
+          Cancelar
+        </button>
+        <button class="btn btn-primary" id="sendReplyBtn">
+          <i data-lucide="send" class="icon" style="color:white;"></i>
+          Enviar resposta
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Criar Chamado -->
+  <div class="modalOverlay" id="modalTicketOverlay">
+    <div class="modal">
+      <div class="modalHeader">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:38px;height:38px;border-radius:16px;display:grid;place-items:center;
+                      background: linear-gradient(135deg, rgba(110,21,51,.16), rgba(246,211,221,.75));
+                      border:1px solid rgba(110,21,51,.15);">
+            <i data-lucide="ticket-plus" class="icon"></i>
+          </div>
+          <div>
+            <h3>Novo Chamado</h3>
+            <div class="muted" style="font-weight:750; font-size:12px;">Criar um chamado</div>
+          </div>
+        </div>
+
+        <button class="btn btn-ghost" id="closeTicketModal" style="padding:10px 12px;">
+          <i data-lucide="x" class="icon"></i>
+        </button>
+      </div>
+
+      <div class="modalBody">
+        <div class="grid">
+          <div class="field">
+            <div class="label">Título</div>
+            <input class="input" id="tTitle" placeholder="Título do chamado" />
+          </div>
+
+          <div class="field">
+            <div class="label">Descrição</div>
+            <textarea class="textarea" id="tDesc" placeholder="Explique o que está acontecendo..."></textarea>
+          </div>
+
+          <div class="field">
+            <div class="label">Prioridade</div>
+            <select id="tPriority" class="select">
+              <option value="normal">Normal</option>
+              <option value="low">Baixa</option>
+              <option value="high">Alta</option>
+              <option value="urgent">Urgente</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="modalFooter">
+        <button class="btn btn-ghost" id="cancelTicketBtn">
+          <i data-lucide="corner-up-left" class="icon"></i>
+          Cancelar
+        </button>
+        <button class="btn btn-primary" id="saveTicketBtn">
+          <i data-lucide="save" class="icon" style="color:white;"></i>
+          Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Modal obrigatório: redefinir senha -->
+  <div class="modalOverlay" id="modalResetOverlay">
+    <div class="modal">
+      <div class="modalHeader">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:38px;height:38px;border-radius:16px;display:grid;place-items:center;
+                      background: linear-gradient(135deg, rgba(110,21,51,.16), rgba(246,211,221,.75));
+                      border:1px solid rgba(110,21,51,.15);">
+            <i data-lucide="key-round" class="icon"></i>
+          </div>
+          <div>
+            <h3>Redefinir senha</h3>
+            <div class="muted" style="font-weight:750; font-size:12px;">
+              Sua senha é temporária. Você precisa criar uma nova para continuar.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modalBody">
+        <div class="grid">
+          <div class="field">
+            <div class="label">Nova senha</div>
+            <input class="input" id="newPass" type="password" placeholder="mín. 6 caracteres" />
+          </div>
+          <div class="field">
+            <div class="label">Confirmar nova senha</div>
+            <input class="input" id="newPass2" type="password" placeholder="repita a senha" />
+          </div>
+          <div class="pill warn">
+            <i data-lucide="shield-alert" class="icon" style="width:16px;height:16px;"></i>
+            Você não consegue usar o sistema até redefinir.
+          </div>
+        </div>
+      </div>
+
+      <div class="modalFooter">
+        <button class="btn btn-primary" id="saveNewPassBtn">
+          <i data-lucide="check" class="icon" style="color:white;"></i>
+          Salvar nova senha
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <i data-lucide="check-circle-2" class="icon"></i>
+    <div id="toastMsg" style="font-weight:900;">OK</div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="./assets/userDashboard.js"></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

@@ -1,0 +1,538 @@
+<!-- public/adminDashboard.html (SUBSTITUA O ARQUIVO INTEIRO) -->
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Maximum Atlas • Admin Dashboard</title>
+  <link rel="stylesheet" href="./assets/app.css"/>
+</head>
+<body>
+  <div class="dashboard">
+    <aside class="sidebar">
+      <div class="brand">
+        <div style="width:38px;height:38px;border-radius:16px;display:grid;place-items:center;
+                    background: linear-gradient(135deg, rgba(110,21,51,.16), rgba(246,211,221,.75));
+                    border:1px solid rgba(110,21,51,.15);">
+          <i data-lucide="layout-dashboard" class="icon"></i>
+        </div>
+        <div>
+          <h1>Maximum Atlas</h1>
+          <small id="adminName">Acesso: ...</small>
+        </div>
+      </div>
+
+      <div class="navSection">
+        <div class="navTitle">Navegação</div>
+        <div class="navItem active" data-view="dashboard">
+          <i data-lucide="pie-chart" class="icon"></i>
+          Dashboard
+        </div>
+        <div class="navItem" data-view="tickets">
+          <i data-lucide="ticket" class="icon"></i>
+          Chamados
+        </div>
+
+        <div class="navTitle">Gerenciamento</div>
+        <div class="navItem" data-view="users">
+          <i data-lucide="users" class="icon"></i>
+          Usuários
+        </div>
+
+        <div style="margin-top:18px;">
+          <button id="logoutBtn" class="btn btn-ghost" style="width:100%; justify-content:center;">
+            <i data-lucide="log-out" class="icon"></i>
+            Sair do Painel
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar fadeUp">
+        <div>
+          <h2 id="pageTitle">Dashboard</h2>
+          <p id="pageSubtitle">Visão geral dos chamados e tendências.</p>
+        </div>
+
+        <div style="display:flex; gap:10px; align-items:center;">
+          <div class="pill neutral" id="smtpPill" title="Configuração de envio de e-mail">
+            <i data-lucide="mail" class="icon" style="width:16px;height:16px;"></i>
+            SMTP: ...
+          </div>
+          <button id="refreshBtn" class="btn btn-primary">
+            <i data-lucide="refresh-ccw" class="icon" style="color:white;"></i>
+            Atualizar
+          </button>
+        </div>
+      </header>
+
+      <!-- DASHBOARD VIEW -->
+      <section id="viewDashboard" class="fadeUp">
+        <div class="kpiGrid">
+          <div class="kpi">
+            <div class="t">Abertos</div>
+            <div class="v" id="kpiOpen">0</div>
+          </div>
+          <div class="kpi">
+            <div class="t">Em andamento</div>
+            <div class="v" id="kpiProg">0</div>
+          </div>
+          <div class="kpi">
+            <div class="t">Resolvidos</div>
+            <div class="v" id="kpiResolved">0</div>
+          </div>
+          <div class="kpi">
+            <div class="t">Fechados</div>
+            <div class="v" id="kpiClosed">0</div>
+          </div>
+        </div>
+
+        <div class="chartGrid">
+          <div class="chartCard">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+              <div style="font-weight:1000;">Chamados criados (últimos dias)</div>
+              <span class="pill neutral"><i data-lucide="activity" class="icon" style="width:16px;height:16px;"></i> tendência</span>
+            </div>
+            <div style="margin-top:12px;">
+              <canvas id="chartDaily" height="90"></canvas>
+            </div>
+          </div>
+
+          <div class="chartCard">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+              <div style="font-weight:1000;">Distribuição por status</div>
+              <span class="pill neutral"><i data-lucide="layers" class="icon" style="width:16px;height:16px;"></i> agora</span>
+            </div>
+            <div style="margin-top:12px;">
+              <canvas id="chartStatus" height="160"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="chartGrid">
+          <div class="chartCard">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+              <div style="font-weight:1000;">Distribuição por prioridade</div>
+              <span class="pill neutral"><i data-lucide="zap" class="icon" style="width:16px;height:16px;"></i> risco</span>
+            </div>
+            <div style="margin-top:12px;">
+              <canvas id="chartPriority" height="120"></canvas>
+            </div>
+          </div>
+
+          <div class="chartCard">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+              <div style="font-weight:1000;">Atalhos rápidos</div>
+              <span class="pill neutral"><i data-lucide="sparkles" class="icon" style="width:16px;height:16px;"></i> ações</span>
+            </div>
+
+            <div class="chips">
+              <div class="chip" id="goOpen"><i data-lucide="alert-circle" class="icon" style="width:16px;height:16px;"></i> Ver abertos</div>
+              <div class="chip" id="goUrgent"><i data-lucide="flame" class="icon" style="width:16px;height:16px;"></i> Ver urgentes</div>
+              <div class="chip" id="goProgress"><i data-lucide="loader" class="icon" style="width:16px;height:16px;"></i> Em andamento</div>
+              <div class="chip" id="goAll"><i data-lucide="list" class="icon" style="width:16px;height:16px;"></i> Todos</div>
+              <div class="chip" id="goUsers"><i data-lucide="users" class="icon" style="width:16px;height:16px;"></i> Usuários</div>
+            </div>
+
+            <div style="margin-top:12px;" class="pill neutral" id="usersKpiPill">
+              <i data-lucide="user-check" class="icon" style="width:16px;height:16px;"></i>
+              Usuários: ...
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TICKETS VIEW -->
+      <section id="viewTickets" class="fadeUp" style="display:none;">
+        <div class="card">
+          <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:end; justify-content:space-between;">
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
+              <div class="field" style="min-width:240px;">
+                <div class="label">Buscar</div>
+                <input id="q" class="input" placeholder="Título, descrição, solicitante, responsável..." />
+              </div>
+
+              <div class="field" style="min-width:180px;">
+                <div class="label">Status</div>
+                <select id="statusFilter" class="select">
+                  <option value="">Todos</option>
+                  <option value="open">Aberto</option>
+                  <option value="in_progress">Em andamento</option>
+                  <option value="resolved">Resolvido</option>
+                  <option value="closed">Fechado</option>
+                </select>
+              </div>
+
+              <div class="field" style="min-width:180px;">
+                <div class="label">Prioridade</div>
+                <select id="priorityFilter" class="select">
+                  <option value="">Todas</option>
+                  <option value="low">Baixa</option>
+                  <option value="normal">Normal</option>
+                  <option value="high">Alta</option>
+                  <option value="urgent">Urgente</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+              <button id="newTicketBtn" class="btn btn-primary">
+                <i data-lucide="plus" class="icon" style="color:white;"></i>
+                Novo Chamado
+              </button>
+              <button id="applyTicketBtn" class="btn btn-ghost">
+                <i data-lucide="filter" class="icon"></i>
+                Filtrar
+              </button>
+            </div>
+          </div>
+
+          <div class="chips">
+            <div class="chip" data-quick="open"><i data-lucide="alert-circle" class="icon" style="width:16px;height:16px;"></i> Abertos</div>
+            <div class="chip" data-quick="in_progress"><i data-lucide="loader" class="icon" style="width:16px;height:16px;"></i> Em andamento</div>
+            <div class="chip" data-quick="resolved"><i data-lucide="check-circle-2" class="icon" style="width:16px;height:16px;"></i> Resolvidos</div>
+            <div class="chip" data-quick="urgent"><i data-lucide="flame" class="icon" style="width:16px;height:16px;"></i> Urgentes</div>
+            <div class="chip" data-quick="all"><i data-lucide="list" class="icon" style="width:16px;height:16px;"></i> Todos</div>
+          </div>
+
+          <div style="margin-top:14px; overflow:auto;">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Título</th>
+                  <th>Solicitante</th>
+                  <th>Responsável</th>
+                  <th>Prioridade</th>
+                  <th>Status</th>
+                  <th class="muted" style="text-align:right;">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="ticketsBody"></tbody>
+            </table>
+
+            <div id="emptyTickets" class="muted" style="display:none; padding:14px; font-weight:800;">
+              Nenhum chamado encontrado.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- USERS VIEW -->
+      <section id="viewUsers" class="fadeUp" style="display:none;">
+        <div class="card">
+          <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:end; justify-content:space-between;">
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
+              <div class="field" style="min-width:260px;">
+                <div class="label">Buscar</div>
+                <input id="uq" class="input" placeholder="Nome ou e-mail..." />
+              </div>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+              <button id="newUserBtn" class="btn btn-primary">
+                <i data-lucide="user-plus" class="icon" style="color:white;"></i>
+                Criar Usuário
+              </button>
+              <button id="applyUserBtn" class="btn btn-ghost">
+                <i data-lucide="filter" class="icon"></i>
+                Filtrar
+              </button>
+            </div>
+          </div>
+
+          <div class="pill neutral" style="margin-top:12px;">
+            <i data-lucide="key" class="icon" style="width:16px;height:16px;"></i>
+            Dica: se a senha for <strong>123456</strong>, o usuário será obrigado a definir uma nova senha no primeiro login.
+          </div>
+
+          <div style="margin-top:14px; overflow:auto;">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>E-mail</th>
+                  <th>Segurança</th>
+                  <th>Criado em</th>
+                  <th class="muted" style="text-align:right;">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="usersBody"></tbody>
+            </table>
+
+            <div id="emptyUsers" class="muted" style="display:none; padding:14px; font-weight:800;">
+              Nenhum usuário encontrado.
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODAL: TICKET EDIT/CREATE -->
+  <div class="modalOverlay" id="modalTicketOverlay">
+    <div class="modal">
+      <div class="modalHeader">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:38px;height:38px;border-radius:16px;display:grid;place-items:center;
+                      background: linear-gradient(135deg, rgba(110,21,51,.16), rgba(246,211,221,.75));
+                      border:1px solid rgba(110,21,51,.15);">
+            <i data-lucide="file-pen-line" class="icon"></i>
+          </div>
+          <div>
+            <h3 id="ticketModalTitle">Editar Chamado</h3>
+            <div class="muted" style="font-weight:750; font-size:12px;" id="ticketModalSubtitle">—</div>
+          </div>
+        </div>
+
+        <button class="btn btn-ghost" id="closeTicketModal" style="padding:10px 12px;">
+          <i data-lucide="x" class="icon"></i>
+        </button>
+      </div>
+
+      <div class="modalBody">
+        <div class="grid">
+          <div class="field">
+            <div class="label">Título</div>
+            <input class="input" id="tTitle" placeholder="Título do chamado" />
+          </div>
+
+          <div class="field">
+            <div class="label">Descrição</div>
+            <textarea class="textarea" id="tDesc" placeholder="Descreva o problema..."></textarea>
+          </div>
+
+          <div class="grid2">
+            <div class="field">
+              <div class="label">Status</div>
+              <select id="tStatus" class="select">
+                <option value="open">Aberto</option>
+                <option value="in_progress">Em andamento</option>
+                <option value="resolved">Resolvido</option>
+                <option value="closed">Fechado</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <div class="label">Prioridade</div>
+              <select id="tPriority" class="select">
+                <option value="low">Baixa</option>
+                <option value="normal">Normal</option>
+                <option value="high">Alta</option>
+                <option value="urgent">Urgente</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid2">
+            <div class="field">
+              <div class="label">Solicitante (nome)</div>
+              <input class="input" id="tRequesterName" placeholder="Ex: Carlos Lima" />
+            </div>
+
+            <div class="field">
+              <div class="label">Solicitante (email)</div>
+              <input class="input" id="tRequesterEmail" placeholder="Ex: carlos@empresa.com" />
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="label">Responsável</div>
+            <input class="input" id="tAssigned" placeholder="Ex: Suporte N1" />
+          </div>
+        </div>
+      </div>
+
+      <div class="modalFooter">
+        <button class="btn btn-ghost" id="cancelTicketModal">
+          <i data-lucide="corner-up-left" class="icon"></i>
+          Cancelar
+        </button>
+        <button class="btn btn-primary" id="saveTicketBtn">
+          <i data-lucide="save" class="icon" style="color:white;"></i>
+          Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: TICKET NOTIFY -->
+  <div class="modalOverlay" id="modalTicketNotifyOverlay">
+    <div class="modal">
+      <div class="modalHeader">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:38px;height:38px;border-radius:16px;display:grid;place-items:center;
+                      background: linear-gradient(135deg, rgba(110,21,51,.16), rgba(246,211,221,.75));
+                      border:1px solid rgba(110,21,51,.15);">
+            <i data-lucide="bell-ring" class="icon"></i>
+          </div>
+          <div>
+            <h3>Notificar sobre o chamado</h3>
+            <div class="muted" style="font-weight:750; font-size:12px;" id="ticketNotifySubtitle">—</div>
+          </div>
+        </div>
+
+        <button class="btn btn-ghost" id="closeTicketNotifyModal" style="padding:10px 12px;">
+          <i data-lucide="x" class="icon"></i>
+        </button>
+      </div>
+
+      <div class="modalBody">
+        <div class="grid">
+          <div class="field">
+            <div class="label">Título</div>
+            <input class="input" id="ticketNotifyTitle" placeholder="Ex: Atualização do seu chamado" />
+          </div>
+
+          <div class="field">
+            <div class="label">Descrição</div>
+            <textarea class="textarea" id="ticketNotifyDesc" placeholder="Mensagem para o usuário..."></textarea>
+          </div>
+
+          <div class="pill neutral">
+            <i data-lucide="info" class="icon" style="width:16px;height:16px;"></i>
+            Isso cria uma notificação interna e envia e-mail se SMTP estiver configurado.
+          </div>
+        </div>
+      </div>
+
+      <div class="modalFooter">
+        <button class="btn btn-ghost" id="cancelTicketNotifyBtn">
+          <i data-lucide="corner-up-left" class="icon"></i>
+          Cancelar
+        </button>
+        <button class="btn btn-primary" id="sendTicketNotifyBtn">
+          <i data-lucide="send" class="icon" style="color:white;"></i>
+          Enviar e-mail
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: USER CREATE/EDIT -->
+  <div class="modalOverlay" id="modalUserOverlay">
+    <div class="modal">
+      <div class="modalHeader">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:38px;height:38px;border-radius:16px;display:grid;place-items:center;
+                      background: linear-gradient(135deg, rgba(110,21,51,.16), rgba(246,211,221,.75));
+                      border:1px solid rgba(110,21,51,.15);">
+            <i data-lucide="user-cog" class="icon"></i>
+          </div>
+          <div>
+            <h3 id="userModalTitle">Criar Usuário</h3>
+            <div class="muted" style="font-weight:750; font-size:12px;" id="userModalSubtitle">—</div>
+          </div>
+        </div>
+
+        <button class="btn btn-ghost" id="closeUserModal" style="padding:10px 12px;">
+          <i data-lucide="x" class="icon"></i>
+        </button>
+      </div>
+
+      <div class="modalBody">
+        <div class="grid">
+          <div class="grid2">
+            <div class="field">
+              <div class="label">Nome</div>
+              <input class="input" id="uName" placeholder="Nome do usuário" />
+            </div>
+            <div class="field">
+              <div class="label">E-mail</div>
+              <input class="input" id="uEmail" placeholder="email@empresa.com" />
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="label">Senha</div>
+            <input class="input" id="uPassword" placeholder="Senha (mín. 6) — use 123456 para exigir troca" />
+            <div class="muted" style="font-weight:800; font-size:12px; margin-top:6px;">
+              * Em edição, deixe em branco para manter a senha atual.
+            </div>
+          </div>
+
+          <div class="pill neutral">
+            <i data-lucide="shield-alert" class="icon" style="width:16px;height:16px;"></i>
+            Se a senha for <strong>123456</strong>, o sistema marcará como “precisa redefinir”.
+          </div>
+        </div>
+      </div>
+
+      <div class="modalFooter">
+        <button class="btn btn-ghost" id="cancelUserModal">
+          <i data-lucide="corner-up-left" class="icon"></i>
+          Cancelar
+        </button>
+        <button class="btn btn-primary" id="saveUserBtn">
+          <i data-lucide="save" class="icon" style="color:white;"></i>
+          Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: USER NOTIFY -->
+  <div class="modalOverlay" id="modalUserNotifyOverlay">
+    <div class="modal">
+      <div class="modalHeader">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:38px;height:38px;border-radius:16px;display:grid;place-items:center;
+                      background: linear-gradient(135deg, rgba(110,21,51,.16), rgba(246,211,221,.75));
+                      border:1px solid rgba(110,21,51,.15);">
+            <i data-lucide="bell" class="icon"></i>
+          </div>
+          <div>
+            <h3>Notificar usuário</h3>
+            <div class="muted" style="font-weight:750; font-size:12px;" id="userNotifySubtitle">—</div>
+          </div>
+        </div>
+
+        <button class="btn btn-ghost" id="closeUserNotifyModal" style="padding:10px 12px;">
+          <i data-lucide="x" class="icon"></i>
+        </button>
+      </div>
+
+      <div class="modalBody">
+        <div class="grid">
+          <div class="field">
+            <div class="label">Título</div>
+            <input class="input" id="userNotifyTitle" placeholder="Ex: Aviso importante" />
+          </div>
+
+          <div class="field">
+            <div class="label">Descrição</div>
+            <textarea class="textarea" id="userNotifyDesc" placeholder="Mensagem para o usuário..."></textarea>
+          </div>
+
+          <div class="pill neutral">
+            <i data-lucide="info" class="icon" style="width:16px;height:16px;"></i>
+            Cria notificação interna + envia e-mail se SMTP estiver configurado.
+          </div>
+        </div>
+      </div>
+
+      <div class="modalFooter">
+        <button class="btn btn-ghost" id="cancelUserNotifyBtn">
+          <i data-lucide="corner-up-left" class="icon"></i>
+          Cancelar
+        </button>
+        <button class="btn btn-primary" id="sendUserNotifyBtn">
+          <i data-lucide="send" class="icon" style="color:white;"></i>
+          Enviar e-mail
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <i data-lucide="check-circle-2" class="icon"></i>
+    <div id="toastMsg" style="font-weight:900;">OK</div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="./assets/adminDashboard.js"></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

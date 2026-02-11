@@ -1,0 +1,71 @@
+<!-- public/userLogin.html -->
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Maximum Atlas • Login Usuário</title>
+  <link rel="stylesheet" href="./assets/app.css"/>
+</head>
+<body style="display:flex; align-items:center; justify-content:center; min-height:100vh; background:linear-gradient(135deg,#ffffff,#f9f1f4);">
+
+  <div class="card fadeUp" style="width:100%; max-width:420px; padding:28px;">
+    <div style="text-align:center; margin-bottom:18px;">
+      <div style="width:60px;height:60px;margin:0 auto 10px;border-radius:18px;
+                  display:grid;place-items:center;
+                  background:linear-gradient(135deg,rgba(110,21,51,.15),rgba(246,211,221,.8));
+                  border:1px solid rgba(110,21,51,.15);">
+        <i data-lucide="user" class="icon"></i>
+      </div>
+      <h2 style="margin:0;">Login do Usuário</h2>
+      <p class="muted" style="font-weight:800;">Acesse seu painel</p>
+    </div>
+
+    <div class="grid">
+      <div class="field">
+        <div class="label">E-mail</div>
+        <input type="email" id="email" class="input" placeholder="email@empresa.com"/>
+      </div>
+
+      <div class="field">
+        <div class="label">Senha</div>
+        <input type="password" id="password" class="input" placeholder="••••••••"/>
+      </div>
+
+      <button id="loginBtn" class="btn btn-primary" style="margin-top:6px;">
+        <i data-lucide="log-in" class="icon" style="color:white;"></i>
+        Entrar
+      </button>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    lucide.createIcons();
+
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      if (!email || !password) return alert("Preencha todos os campos");
+
+      try {
+        const r = await fetch("/api/user/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await r.json();
+        if (!data.ok) throw new Error();
+
+        localStorage.setItem("ma_user_token", data.token);
+        window.location.href = "./userDashboard.html";
+      } catch {
+        alert("Login inválido");
+      }
+    });
+  </script>
+
+</body>
+</html>
