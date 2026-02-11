@@ -2,17 +2,45 @@
 const mongoose = require("mongoose");
 
 let isConnected = false;
+let connectingPromise = null;
 
 async function connectDB() {
   if (isConnected) return;
+  if (connectingPromise) return connectingPromise;
 
-  if (!process.env.MONGODB_URI) throw new Error("Faltou MONGODB_URI no .env");
+  const uri = process.env.MONGODB_URI || process.env.MONGO_URI;
+  if (!uri) throw new Error("Faltou MONGODB_URI (ou MONGO_URI) nas variáveis de ambiente");
 
   mongoose.set("strictQuery", true);
-  await mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 15000 });
 
-  isConnected = true;
-  console.log("[db] MongoDB conectado");
+  // logs úteis (opcional)
+  mongoose.connection.on("connected", () => console.log("[db] conectado"));
+  mongoose.connection.on("disconnected", () => console.log("[db] desconectado"));
+  mongoose.connection.on("error", (err) => console.log("[db] erro:", err?.message || err));
+
+  const options = {
+    serverSelectionTimeoutMS: 15000,
+    connectTimeoutMS: 15000,
+    socketTimeoutMS: 45000,
+    maxPoolSize: 10,
+
+    // evita dor com IPv6 em alguns ambientes cloud
+    family: 4
+  };
+
+  connectingPromise = mongoose
+    .connect(uri, options)
+    .then(() => {
+      isConnected = true;
+      console.log("[db] MongoDB conectado");
+    })
+    .catch((err) => {
+      // libera para novas tentativas
+      connectingPromise = null;
+      throw err;
+    });
+
+  return connectingPromise;
 }
 
 /** Counter (auto-increment) */
@@ -20,7 +48,7 @@ const CounterSchema = new mongoose.Schema(
   { _id: { type: String, required: true }, seq: { type: Number, default: 0 } },
   { versionKey: false }
 );
-const Counter = mongoose.model("Counter", CounterSchema);
+const Counter = mongoose.models.Counter || mongoose.model("Counter", CounterSchema);
 
 /** Admin */
 const AdminSchema = new mongoose.Schema(
@@ -31,7 +59,7 @@ const AdminSchema = new mongoose.Schema(
   },
   { timestamps: { createdAt: "created_at", updatedAt: false } }
 );
-const Admin = mongoose.model("Admin", AdminSchema);
+const Admin = mongoose.models.Admin || mongoose.model("Admin", AdminSchema);
 
 /** User */
 const UserSchema = new mongoose.Schema(
@@ -43,7 +71,7 @@ const UserSchema = new mongoose.Schema(
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
 );
-const User = mongoose.model("User", UserSchema);
+const User = mongoose.models.User || mongoose.model("User", UserSchema);
 
 /** Ticket */
 const TicketSchema = new mongoose.Schema(
@@ -61,18 +89,22 @@ const TicketSchema = new mongoose.Schema(
 );
 
 TicketSchema.pre("save", async function (next) {
-  if (this.ticket_no != null) return next();
+  try {
+    if (this.ticket_no != null) return next();
 
-  const counter = await Counter.findByIdAndUpdate(
-    { _id: "ticket_no" },
-    { $inc: { seq: 1 } },
-    { new: true, upsert: true }
-  );
+    const counter = await Counter.findByIdAndUpdate(
+      { _id: "ticket_no" },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
 
-  this.ticket_no = counter.seq;
-  next();
+    this.ticket_no = counter.seq;
+    return next();
+  } catch (e) {
+    return next(e);
+  }
 });
-const Ticket = mongoose.model("Ticket", TicketSchema);
+const Ticket = mongoose.models.Ticket || mongoose.model("Ticket", TicketSchema);
 
 /** Notification */
 const NotificationSchema = new mongoose.Schema(
@@ -85,7 +117,6 @@ const NotificationSchema = new mongoose.Schema(
     description: { type: String, required: true, trim: true },
     read: { type: Boolean, default: false, index: true },
 
-    // ✅ NOVO: thread interno (responder no sistema)
     replies: [
       {
         from_role: { type: String, enum: ["user", "admin"], default: "user" },
@@ -98,6 +129,6 @@ const NotificationSchema = new mongoose.Schema(
 );
 
 NotificationSchema.index({ recipient_email: 1, created_at: -1 });
-const Notification = mongoose.model("Notification", NotificationSchema);
+const Notification = mongoose.models.Notification || mongoose.model("Notification", NotificationSchema);
 
 module.exports = { connectDB, Admin, User, Ticket, Notification };
